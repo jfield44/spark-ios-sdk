@@ -127,23 +127,26 @@ class WebSocketService: WebSocketDelegate {
     }
     
     func websocketDidReceiveData(socket: WebSocket, data: Data) {
-        let json = JSON(data: data)
-        ackMessage(socket, messageId: json["id"].string ?? "")
-        let eventData = json["data"]
-        if let eventType = eventData["eventType"].string {
-            if eventType.hasPrefix("locus") {
-                let eventObj = eventData.object;
-                guard let eventJson = eventObj as? [String: Any],
-                    let event = Mapper<CallEventModel>().map(JSON: eventJson),
-                    let call = event.callModel,
-                    let type = event.type else {
-                        SDKLogger.shared.error("Malformed call event could not be processed as a call event \(eventObj)")
-                        return
+        do{
+            let json = try JSON(data: data)
+            ackMessage(socket, messageId: json["id"].string ?? "")
+            let eventData = json["data"]
+            if let eventType = eventData["eventType"].string {
+                if eventType.hasPrefix("locus") {
+                    let eventObj = eventData.object;
+                    guard let eventJson = eventObj as? [String: Any],
+                        let event = Mapper<CallEventModel>().map(JSON: eventJson),
+                        let call = event.callModel,
+                        let type = event.type else {
+                            SDKLogger.shared.error("Malformed call event could not be processed as a call event \(eventObj)")
+                            return
+                    }
+                    SDKLogger.shared.info("Receive locus event: \(type)")
+                    self.onCallModel?(call)
                 }
-                SDKLogger.shared.info("Receive locus event: \(type)")
-                self.onCallModel?(call)
             }
-        }
+        }catch{}
+       
     }
     
     // MARK: - Websocket Event Handler

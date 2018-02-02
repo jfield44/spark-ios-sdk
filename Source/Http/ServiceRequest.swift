@@ -250,11 +250,17 @@ extension SparkError {
     
     /// Converts the error data to NSError
     static func requestErrorWith(data: Data) -> Error {
-        var failureReason = "Service request failed without error message"
-        if let errorMessage = JSON(data: data)["message"].string {
-            failureReason = errorMessage
+        do{
+            var failureReason = "Service request failed without error message"
+            if let errorMessage = try JSON(data: data)["message"].string {
+                failureReason = errorMessage
+            }
+            return SparkError.serviceFailed(code: -7000, reason: failureReason)
+        }catch{
+            let failureReason = "Service request failed without error message"
+            return SparkError.serviceFailed(code: -7000, reason: failureReason)
         }
-        return SparkError.serviceFailed(code: -7000, reason: failureReason)
+
     }
     
 }
