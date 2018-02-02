@@ -14,7 +14,7 @@ Pod::Spec.new do |s|
   s.vendored_frameworks = "MediaEngine/Wme.framework"
   s.dependency 'Alamofire', '~> 4.0'
   s.dependency 'ObjectMapper','~>3.1.0'
-  s.dependency 'AlamofireObjectMapper'
+  s.dependency 'AlamofireObjectMapper', '~>5.0.0'
   s.dependency 'SwiftyJSON','~>4.0.0'
   s.dependency 'Starscream', '~> 2.0'
   s.dependency 'KeychainAccess', '~> 3.0'
