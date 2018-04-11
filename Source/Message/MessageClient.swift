@@ -38,47 +38,30 @@ public class MessageClient {
     /// The list sorts the messages in descending order by creation date.
     ///
     /// - parameter roomId: The identifier of the room.
-    /// - parameter sinceDate: the messages published date is after this date, format in "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
-    /// - parameter midDate: The messages published date is before or after this date. At most limit/2 messages before and limit/2 messages after the date will be included, format in "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
-    /// - parameter maxDate: the messages published date is before this date, format in "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
-    /// - parameter limit:  Maximum number of messages return. Default is 6.
-    /// - parameter personRefresh: (experimental)control if the person detail in message need to be refreshed to latest. If person detail got      refreshed, person.id will be in UUID format even if original one is email. Default is false.
-    /// - parameter lastMessageFirst: Sort order for the messages. Default is true.
+    /// - parameter mentionedPeople: List messages where the caller is mentioned by specifying "me".
+    /// - parameter before: List messages sent before a date and time, in ISO8601 format. Format: "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
+    /// - parameter beforeMessage: List messages sent before a message, by ID.
+    /// - parameter max: Limit the maximum number of messages in the response, default is 50
     /// - parameter queue: If not nil, the queue on which the completion handler is dispatched. Otherwise, the handler is dispatched on the application's main thread.
     /// - parameter completionHandler: A closure to be executed once the request has finished.
     /// - returns: Void
     /// - since: 1.4.0
     public func list(roomId: String,
-                     sinceDate: String? = nil,
-                     maxDate: String? = nil,
-                     midDate: String? = nil,
-                     limit: Int? = nil,
-                     personRefresh: Bool? = false,
-                     lastMessageFirst: Bool? = true,
+                     mentionedPeople: String? = nil,
+                     before: String? = nil,
+                     beforeMessage: String? = nil,
+                     max: Int? = 50,
                      queue: DispatchQueue? = nil,
                      completionHandler: @escaping (ServiceResponse<[MessageModel]>) -> Void)
     {
-        let query = RequestParameter([
-            "conversationId": roomId.sparkSplitString(),
-            "sinceDate": sinceDate,
-            "maxDate": maxDate,
-            "midDate": midDate,
-            "limit": limit,
-            "personRefresh": personRefresh,
-            "lastActivityFirst": lastMessageFirst,
-            ])
-        
-        let request = messageServiceBuilder().path("activities")
-            .keyPath("items")
-            .method(.get)
-            .query(query)
-            .queue(queue)
-            .build()
-       
         if self.encryptKeyReadyFor(roomId){
             let roomResource = self.roomResourceList.filter({$0.roomId == roomId}).first
-            let listOperation = ListMessageOperation(roomId: roomId,
-                                                     listRequest: request,
+            let listOperation = ListMessageOperation(authenticator: self.authenticator,
+                                                     roomId: roomId,
+                                                     mentionedPeople: mentionedPeople,
+                                                     before:  before,
+                                                     beforeMessage: beforeMessage,
+                                                     max: max,
                                                      keyMaterial: roomResource?.keyMaterial,
                                                      completionHandler: completionHandler)
             self.executeOperationQueue.addOperation(listOperation)
@@ -88,8 +71,12 @@ public class MessageClient {
                 let roomSource = RoomResourceModel(roomId: roomId)
                 self.roomResourceList.append(roomSource)
             }
-            let listOperation = ListMessageOperation(roomId: roomId,
-                                                     listRequest: request,
+            let listOperation = ListMessageOperation(authenticator: self.authenticator,
+                                                     roomId: roomId,
+                                                     mentionedPeople: mentionedPeople,
+                                                     before: before,
+                                                     beforeMessage: beforeMessage,
+                                                     max: max,
                                                      completionHandler: completionHandler)
             self.pendingListOperationList.append(listOperation)
             if(!self.isClientReady){

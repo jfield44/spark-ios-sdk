@@ -24,44 +24,141 @@ import MobileCoreServices.UTCoreTypes
 import MobileCoreServices.UTType
 
 class ListMessageOperation: Operation {
+    var resultList : [MessageModel] = [MessageModel]()
+    let authenticator: Authenticator
     var roomId: String
-    var listRequest: ServiceRequest
+    var mentionedPeople: String?
+    var before: String?
+    var beforeMessage: String?
+    var max: Int = 50
+    var remainCount: Int = 50
     var completionHandler : (ServiceResponse<[MessageModel]>) -> Void
-    var response: ServiceResponse<[MessageModel]>?
+    var queue : DispatchQueue?
     var keyMaterial : String?
-    init(roomId : String,
-         listRequest: ServiceRequest,
-         keyMaterial: String?=nil,
+    init(authenticator: Authenticator,
+         roomId : String,
+         mentionedPeople: String? = nil,
+         before: String? = nil,
+         beforeMessage: String? = nil,
+         max: Int?,
+         keyMaterial: String? = nil,
          queue:DispatchQueue? = nil,
          completionHandler: @escaping (ServiceResponse<[MessageModel]>) -> Void)
     {
+        self.authenticator = authenticator
         self.roomId = roomId
-        self.listRequest = listRequest
-        self.completionHandler = completionHandler
+        self.mentionedPeople = mentionedPeople
+        self.before = before
+        self.beforeMessage = beforeMessage
         self.keyMaterial = keyMaterial
+        self.queue = queue
+        self.completionHandler = completionHandler
+        if let m = max{
+            self.max = m
+            self.remainCount = m
+        }
         super.init()
     }
     
     override func main() {
-        self.listRequest.responseArray {(response: ServiceResponse<[MessageModel]>) in
-            self.response = response
+        if let beforeMessage = self.beforeMessage{
+            self.getRequest(messageId: beforeMessage)
+        }else{
+            self.listRequest()
+        }
+    }
+    
+    private func getRequest(messageId: String){
+        let request = messageServiceBuilder().path("activities")
+            .method(.get)
+            .path(messageId.sparkSplitString())
+            .queue(queue)
+            .build()
+        request.responseObject { (response : ServiceResponse<MessageModel>) in
             switch response.result{
-            case .success(let list):
-                self.decryptList(list)
+            case .success(let message):
+                self.before = message.created?.longString
+                self.listRequest()
                 break
-            case .failure(_):
-                self.completionHandler(response)
+            case .failure(let error):
+                self.returnFialureResult(error)
                 break
             }
         }
     }
     
-    private func decryptList(_ messageList: [MessageModel]){
+    private func listRequest(){
+        if self.max == 0{
+            self.returnSuccessResult()
+            return
+        }
+        var path : String
+        var query : RequestParameter
+        if let _ = self.mentionedPeople{
+            path = "mentions"
+            query = RequestParameter([
+                "conversationId": roomId.sparkSplitString(),
+                "sinceDate": before,
+                "limit": max,
+                ])
+        }else{
+            path = "activities"
+            query = RequestParameter([
+                "conversationId": roomId.sparkSplitString(),
+                "maxDate": before,
+                "limit": max,
+                ])
+        }
+        let listRequest = messageServiceBuilder().path(path)
+            .keyPath("items")
+            .method(.get)
+            .query(query)
+            .queue(self.queue)
+            .build()
+        
+        listRequest.responseArray {(response: ServiceResponse<[MessageModel]>) in
+            switch response.result{
+            case .success(let list):
+                if list.count == 0{
+                    self.returnSuccessResult()
+                }else{
+                    self.processResult(list)
+                }
+                break
+            case .failure(let error):
+                self.returnFialureResult(error)
+                break
+            }
+        }
+    }
+    
+    private func processResult(_ list: [MessageModel]){
+        let filterList = list.filter({$0.messageAction == MessageAction.post || $0.messageAction == MessageAction.share})
+        self.remainCount -= filterList.count
+        if self.remainCount > 0{
+            self.resultList.append(contentsOf: filterList)
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+            formatter.timeZone = TimeZone(secondsFromGMT: 0)
+            let date = list.last?.created!.addingTimeInterval(-0.1)
+            let before = formatter.string(from: date!)
+            self.before = before
+            self.listRequest()
+        }else if self.remainCount < 0{
+            let remain = self.remainCount + filterList.count
+            self.resultList.append(contentsOf: filterList.prefix(upTo: remain))
+            self.decryptList()
+        }else{
+            self.decryptList()
+        }
+    }
+    
+    // MARK: - DecrypMessageList
+    private func decryptList(){
         guard let acitivityKeyMaterial = self.keyMaterial else{
             return
         }
-        let filterList = messageList.filter({$0.messageAction == MessageAction.post || $0.messageAction == MessageAction.share})
-        for message in filterList{
+        for message in self.resultList{
             do {
                 if message.text == nil{
                     message.text = ""
@@ -95,8 +192,26 @@ class ListMessageOperation: Operation {
                 }
             }catch{}
         }
-        let result = Result<[MessageModel]>.success(filterList)
-        let serviceResponse = ServiceResponse(self.response?.response, result)
+        self.returnSuccessResult()
+    }
+    
+    //MARK: - ReturnResult
+    private func returnSuccessResult(){
+        let result = Result<[MessageModel]>.success(resultList)
+        let serviceResponse = ServiceResponse(nil, result)
         self.completionHandler(serviceResponse)
     }
+    private func returnFialureResult(_ error: Error){
+        let result =  Result<[MessageModel]>.failure(error)
+        let serviceResponse = ServiceResponse(nil, result)
+        self.completionHandler(serviceResponse)
+    }
+    
+    //MARK: - RequestBuilders
+    private func messageServiceBuilder() -> ServiceRequest.MessageServerBuilder {
+        return ServiceRequest.MessageServerBuilder(authenticator)
+    }
+    
 }
+
+
