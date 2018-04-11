@@ -1,5 +1,5 @@
 language: objective-c
-osx_image: xcode8.3
+osx_image: xcode9
 xcode_sdk: iphonesimulator10.3
 
 env:
@@ -7,11 +7,11 @@ env:
   - WORKSPACE=SparkSDK.xcworkspace
   - SCHEME=SparkSDK
   matrix:
-    - DESTINATION="OS=9.0,name=iPhone 5s"      CONFIGURATION="ReleaseTest" IsIntegrationTestingTask="true"
-    - DESTINATION="OS=9.1,name=iPhone 6 Plus"  CONFIGURATION="ReleaseTest"
-    - DESTINATION="OS=9.3,name=iPhone 6s"      CONFIGURATION="ReleaseTest"
-    - DESTINATION="OS=10.0,name=iPhone 6s Plus" CONFIGURATION="ReleaseTest"
-    - DESTINATION="OS=10.3.1,name=iPhone 7"      CONFIGURATION="ReleaseTest"
+    - DESTINATION="OS=10.0,name=iPhone 6s"      CONFIGURATION="ReleaseTest" IsIntegrationTestingTask="true"
+    - DESTINATION="OS=10.3,name=iPhone 6s plus"  CONFIGURATION="ReleaseTest"
+    - DESTINATION="OS=11.0,name=iPhone 7"      CONFIGURATION="ReleaseTest"
+    - DESTINATION="OS=11.1,name=iPhone 7" CONFIGURATION="ReleaseTest"
+    - DESTINATION="OS=11.2,name=iPhone 7 plus"      CONFIGURATION="ReleaseTest"
 before_install:
   - gem install cocoapods --pre
   - pod repo update > /dev/null
