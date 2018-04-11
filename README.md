@@ -90,7 +90,7 @@ Here are some examples of how to use the iOS SDK in your app.
     }
     ```
 
-3. Register the device to send and receive calls:
+3. Register the device to send and receive calls or messages:
 
     ```swift
     spark.phone.register() { error in
@@ -119,17 +119,6 @@ Here are some examples of how to use the iOS SDK in your app.
     spark.memberships.create(roomId: roomId, personEmail: email) { response in
         switch response.result {
         case .success(let membership):
-            // ...
-        case .failure(let error):
-            // ...
-        }
-    }
-
-    // ...
-
-    spark.messages.post(personEmail: email, text: "Hello there") { response in
-        switch response.result {
-        case .success(let message):
             // ...
         case .failure(let error):
             // ...
@@ -218,6 +207,57 @@ Here are some examples of how to use the iOS SDK in your app.
             }
         case .failure(let error):
             // failure
+        }
+    }
+    ```
+    
+9. Post a message 
+
+    ```swift
+    spark.messages.post(email: "coworker@acm.com", text: "hello!", completionHandler: { response in
+        switch response.result {
+        case .success(let message):
+            // ...
+        case let .failure(let error):
+           // ...
+        }
+    })
+    ```
+   
+10. Post a message to a room
+
+    ```swift
+    
+    let mention = MessageMentionModel.createPeopleMentionItem(personId: "{personId}")
+    let groupMention = MessageMentionModel.createGroupMentionItem()
+    let file = FileObjectModel(name: "{fileName}", localFileUrl: "{file sand box address}")
+    let imageFile = FileObjectModel(name: "{imageName}}", image: "{UIImage}")
+
+    spark.messages.post(roomId: "roomId", text: "hello!", mentions: [mention,groupMention], files: [file,imageFile], completionHandler: { response in
+        switch response.result {
+        case .success(let message):
+            // ...
+        case let .failure(let error):
+            // ...
+        }
+    })
+    ```
+   
+11. Receive messages
+    ```swift
+    spark.messages.onMessage = { message in
+            // ...
+    }
+    ```
+   
+12. Delete a message
+    ```swift
+    spark.messages.delete(roomId: "{roomId}", messageId: "{messageId}") { response in
+        switch response.result {
+        case .success(let message):
+            // ...
+        case .failure(let error):
+            // ...
         }
     }
     ```
