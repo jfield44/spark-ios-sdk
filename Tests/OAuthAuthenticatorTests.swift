@@ -350,7 +350,6 @@ class OAuthAuthenticatorTests: XCTestCase {
         var successResult: Bool? = nil
         var count = 0
         testObject.authorize(parentViewController: parent) { success in
-            print(success)
             successResult = success
             count += 1
         }
