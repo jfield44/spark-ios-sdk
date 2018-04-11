@@ -31,7 +31,6 @@ class XCPeopleSpec: XCTestCase {
         XCTAssertNotNil(person.id)
         XCTAssertNotNil(person.emails)
         XCTAssertNotNil(person.displayName)
-        XCTAssertNotNil(person.created)
     }
     
     override func setUp() {
