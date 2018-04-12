@@ -48,7 +48,7 @@ public class MessageClient {
     /// - since: 1.4.0
     public func list(roomId: String,
                      mentionedPeople: String? = nil,
-                     before: String? = nil,
+                     before: Date? = nil,
                      beforeMessage: String? = nil,
                      max: Int? = 50,
                      queue: DispatchQueue? = nil,

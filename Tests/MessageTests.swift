@@ -45,7 +45,6 @@ class MessageTests: XCTestCase {
         return formatter.string(from: date)
     }
 
-    
     private func validate(message: MessageModel?) {
         XCTAssertNotNil(message)
         XCTAssertNotNil(message?.id)
@@ -191,6 +190,7 @@ class MessageTests: XCTestCase {
             }
         }
     }
+    
     func testGetMessageReturnSuccess(){
         let message = postMessage(personEmail: other.email, text: text, files:nil)
         validate(message: message)
@@ -207,7 +207,7 @@ class MessageTests: XCTestCase {
     func testListingMessagesReturnsMessages() {
         let message = postMessage(conversationId: roomId, text: text, mentions:nil, files: nil)
         validate(message: message)
-        let messageArray = listMessages(conversationId: roomId, sinceDate: nil, maxDate: nil, midDate: nil, limit: nil, personRefresh: nil)
+        let messageArray = listMessages(conversationId: roomId, mentionedPeople: nil, before: nil, beforeMessage: nil, max: nil)
         XCTAssertEqual(messageArray?.isEmpty, false)
     }
     
@@ -215,34 +215,29 @@ class MessageTests: XCTestCase {
         _ = postMessage(conversationId: roomId, text: text, mentions:nil, files: nil)
         _ = postMessage(conversationId: roomId, text: text, mentions:nil, files: nil)
         _ = postMessage(conversationId: roomId, text: text, mentions:nil, files: nil)
-        let messageArray = listMessages(conversationId: roomId, sinceDate: nil, maxDate: nil, midDate: nil, limit: 2, personRefresh: false)
+        let messageArray = listMessages(conversationId: roomId, mentionedPeople: nil, before: nil, beforeMessage: nil, max: 2)
         XCTAssertEqual(messageArray?.count, 2)
     }
     
     func testListingMessagesBeforeADateReturnsMessagesPostedBeforeThatDate() {
         let message1 = postMessage(conversationId: roomId, text: text, mentions:nil, files: nil)
         Thread.sleep(forTimeInterval: 5)
-        var nowDate = Date()
-        if let createDate = message1?.created, nowDate > createDate.addingTimeInterval(Config.TestcaseInterval){
-                nowDate = createDate.addingTimeInterval(Config.TestcaseInterval)
-        }
-        let now = getISO8601DateWithDate(nowDate)
-        
+        let now = Date()
         let message2 = postMessage(conversationId: roomId, text: text, mentions:nil, files: nil)
-        let messageArray = listMessages(conversationId: roomId, sinceDate: nil, maxDate: now, midDate: nil, limit: nil, personRefresh: nil)
+        let messageArray = listMessages(conversationId: roomId, mentionedPeople: nil, before: now, beforeMessage: nil, max: nil)
         XCTAssertEqual(messageArray?.contains() {$0.id == message1?.id}, true)
         XCTAssertEqual(messageArray?.contains() {$0.id == message2?.id}, false)
     }
     
-    func testListingMessagesBeforeADateAndAMessageIdDoesNotReturnMessageWithThatId() {
+    func testListingMessagesBeforeADateAndAMessageIdDoesReturnMessageWithThatId() {
         let message = postMessage(conversationId: roomId, text: text, mentions:nil, files: nil)
-        let now = self.getISO8601Date()
-        let messageArray = listMessages(conversationId: roomId, sinceDate: now, maxDate: nil, midDate: nil, limit: nil, personRefresh: nil)
-        XCTAssertEqual(messageArray?.contains() {$0.id == message?.id}, false)
+        let now = Date()
+        let messageArray = listMessages(conversationId: roomId, mentionedPeople: nil, before: now, beforeMessage: nil, max: nil)
+        XCTAssertEqual(messageArray?.contains() {$0.id == message?.id}, true)
     }
     
     func testListingMessageWithInvalidRoomIdDoesNotReturnMessage() {
-        let messageArray = listMessages(conversationId: Config.InvalidId, sinceDate: nil, maxDate: nil, midDate: nil, limit: nil, personRefresh: nil)
+        let messageArray = listMessages(conversationId: Config.InvalidId, mentionedPeople: nil, before: nil, beforeMessage: nil, max: nil)
         XCTAssertNil(messageArray)
     }
     
@@ -283,20 +278,55 @@ class MessageTests: XCTestCase {
         XCTAssertEqual(message1?.text, text)
         XCTAssertEqual(message2?.text, text)
         XCTAssertEqual(message3?.text, text)
-        XCTAssertNil(message3?.files)
         
-        let messageArray = listMessages(conversationId: roomId, sinceDate: nil, maxDate: nil, midDate: nil, limit: 3, personRefresh: nil)
+        let messageArray = listMessages(conversationId: roomId, mentionedPeople: nil, before: nil, beforeMessage: nil, max: 3)
         XCTAssertEqual(messageArray?.count, 3)
         
         XCTAssertTrue(deleteMessage(messageId: message2!.id!))
-        let messageArray1 = listMessages(conversationId: roomId, sinceDate: nil, maxDate: nil, midDate: nil, limit: 3, personRefresh: nil)
-        XCTAssertEqual(messageArray1?.filter({$0.messageAction != MessageAction.tombstone}).count, 1)
+        let messageArray1 = listMessages(conversationId: roomId, mentionedPeople: nil, before: nil, beforeMessage: nil, max: 3)
+        XCTAssertEqual(messageArray1?.filter({$0.id == message2?.id}).count, 0)
         
         XCTAssertTrue(deleteMessage(messageId: message3!.id!))
-        let messageArray2 = listMessages(conversationId: roomId, sinceDate: nil, maxDate: nil, midDate: nil, limit: nil, personRefresh: nil)
-        XCTAssertEqual(messageArray2?.filter({$0.messageAction == MessageAction.tombstone}).count, 0)
+        let messageArray2 = listMessages(conversationId: roomId, mentionedPeople: nil, before: nil, beforeMessage: nil, max: 3)
+        XCTAssertEqual(messageArray2?.filter({$0.id == message3?.id}).count, 0)
     }
     
+    func testSendListMessageWithBeforeMessage() {
+        let message1 = postMessage(conversationId: roomId, text: text, mentions:nil, files: nil)
+        let message2 = postMessage(conversationId: roomId, text: text, mentions:nil, files: nil)
+        let message3 = postMessage(conversationId: roomId, text: text, mentions:nil, files: nil)
+        XCTAssertEqual(message1?.text, text)
+        XCTAssertEqual(message2?.text, text)
+        XCTAssertEqual(message3?.text, text)
+        
+        let messageArray = listMessages(conversationId: roomId, mentionedPeople: nil, before: nil, beforeMessage: message2!.id!, max: 3)
+        XCTAssertEqual(messageArray?.filter({$0.id == message3?.id}).count, 0)
+    }
+    
+    func testSendListMessageWithBefore() {
+        let message1 = postMessage(conversationId: roomId, text: text, mentions:nil, files: nil)
+        let message2 = postMessage(conversationId: roomId, text: text, mentions:nil, files: nil)
+        let message3 = postMessage(conversationId: roomId, text: text, mentions:nil, files: nil)
+        XCTAssertEqual(message1?.text, text)
+        XCTAssertEqual(message2?.text, text)
+        XCTAssertEqual(message3?.text, text)
+        
+        let messageArray = listMessages(conversationId: roomId, mentionedPeople: nil, before: message2!.created, beforeMessage: nil, max: 3)
+        XCTAssertEqual(messageArray?.filter({$0.id == message3?.id}).count, 0)
+    }
+    
+    func testListMessageWithMentionpeople(){
+        let message1 = postMessage(conversationId: roomId, text: text, mentions:nil, files: nil)
+        let message2 = postMessage(conversationId: roomId, text: text, mentions:nil, files: nil)
+        let mention = MessageMentionModel.createPeopleMentionItem(personId: other.personId)
+        let message3 = postMessage(conversationId: roomId, text: text, mentions:[mention], files: nil)
+        XCTAssertEqual(message1?.text, text)
+        XCTAssertEqual(message2?.text, text)
+        XCTAssertEqual(message3?.text, text)
+        
+        let messageArray = listMessages(conversationId: roomId, mentionedPeople: "me" ,before: message2!.created, beforeMessage: nil,max: 3)
+        XCTAssertEqual(messageArray?.count, 0)
+    }
     
     private func deleteMessage(messageId: String) -> Bool {
         let request = { (completionHandler: @escaping (ServiceResponse<MessageModel>) -> Void) in
@@ -334,14 +364,13 @@ class MessageTests: XCTestCase {
         return fixture.getResponse(testCase: self, request: request)
     }
     
-    private func listMessages(conversationId: String, sinceDate: String?, maxDate: String?,midDate: String?, limit: Int?,personRefresh: Bool?) -> [MessageModel]? {
+    private func listMessages(conversationId: String, mentionedPeople: String? ,before: Date?, beforeMessage: String?, max: Int?) -> [MessageModel]? {
         let request = { (completionHandler: @escaping (ServiceResponse<[MessageModel]>) -> Void) in
             self.messages.list(roomId: conversationId,
-                               sinceDate: sinceDate,
-                               maxDate: maxDate,
-                               midDate: midDate,
-                               limit: limit,
-                               personRefresh:personRefresh,
+                               mentionedPeople: mentionedPeople,
+                               before: before,
+                               beforeMessage: beforeMessage,
+                               max: max,
                                completionHandler: completionHandler)
         }
         return fixture.getResponse(testCase: self, request: request)

@@ -28,7 +28,7 @@ class ListMessageOperation: Operation {
     let authenticator: Authenticator
     var roomId: String
     var mentionedPeople: String?
-    var before: String?
+    var before: Date?
     var beforeMessage: String?
     var max: Int = 50
     var remainCount: Int = 50
@@ -38,7 +38,7 @@ class ListMessageOperation: Operation {
     init(authenticator: Authenticator,
          roomId : String,
          mentionedPeople: String? = nil,
-         before: String? = nil,
+         before: Date? = nil,
          beforeMessage: String? = nil,
          max: Int?,
          keyMaterial: String? = nil,
@@ -77,7 +77,7 @@ class ListMessageOperation: Operation {
         request.responseObject { (response : ServiceResponse<MessageModel>) in
             switch response.result{
             case .success(let message):
-                self.before = self.getBeforeTime(date: message.created)
+                self.before = message.created
                 self.listRequest()
                 break
             case .failure(let error):
@@ -98,14 +98,14 @@ class ListMessageOperation: Operation {
             path = "mentions"
             query = RequestParameter([
                 "conversationId": roomId.sparkSplitString(),
-                "sinceDate": before,
+                "sinceDate": self.getBeforeTimeString(date: before),
                 "limit": max,
                 ])
         }else{
             path = "activities"
             query = RequestParameter([
                 "conversationId": roomId.sparkSplitString(),
-                "maxDate": before,
+                "maxDate": self.getBeforeTimeString(date: before),
                 "limit": max,
                 ])
         }
@@ -137,13 +137,14 @@ class ListMessageOperation: Operation {
         self.remainCount -= filterList.count
         if self.remainCount > 0{
             self.resultList.append(contentsOf: filterList)
-            self.before = self.getBeforeTime(date: list.last?.created)
+            self.before = list.last?.created
             self.listRequest()
         }else if self.remainCount < 0{
             let remain = self.remainCount + filterList.count
             self.resultList.append(contentsOf: filterList.prefix(upTo: remain))
             self.decryptList()
         }else{
+            self.resultList.append(contentsOf: filterList)
             self.decryptList()
         }
     }
@@ -190,7 +191,11 @@ class ListMessageOperation: Operation {
         self.returnSuccessResult()
     }
     
-    private func getBeforeTime(date: Date?)->String{
+    private func getBeforeString(){
+        
+    }
+    
+    private func getBeforeTimeString(date: Date?)->String{
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
