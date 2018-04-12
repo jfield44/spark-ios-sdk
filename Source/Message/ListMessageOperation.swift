@@ -77,11 +77,11 @@ class ListMessageOperation: Operation {
         request.responseObject { (response : ServiceResponse<MessageModel>) in
             switch response.result{
             case .success(let message):
-                self.before = message.created?.longString
+                self.before = self.getBeforeTime(date: message.created)
                 self.listRequest()
                 break
             case .failure(let error):
-                self.returnFialureResult(error)
+                self.returnFailureResult(error)
                 break
             }
         }
@@ -126,7 +126,7 @@ class ListMessageOperation: Operation {
                 }
                 break
             case .failure(let error):
-                self.returnFialureResult(error)
+                self.returnFailureResult(error)
                 break
             }
         }
@@ -137,12 +137,7 @@ class ListMessageOperation: Operation {
         self.remainCount -= filterList.count
         if self.remainCount > 0{
             self.resultList.append(contentsOf: filterList)
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-            formatter.timeZone = TimeZone(secondsFromGMT: 0)
-            let date = list.last?.created!.addingTimeInterval(-0.1)
-            let before = formatter.string(from: date!)
-            self.before = before
+            self.before = self.getBeforeTime(date: list.last?.created)
             self.listRequest()
         }else if self.remainCount < 0{
             let remain = self.remainCount + filterList.count
@@ -195,13 +190,25 @@ class ListMessageOperation: Operation {
         self.returnSuccessResult()
     }
     
+    private func getBeforeTime(date: Date?)->String{
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        var newDate = Date()
+        if let dat = date{
+            newDate = dat.addingTimeInterval(-0.1)
+        }
+        let before = formatter.string(from: newDate)
+        return before
+    }
+    
     //MARK: - ReturnResult
     private func returnSuccessResult(){
         let result = Result<[MessageModel]>.success(resultList)
         let serviceResponse = ServiceResponse(nil, result)
         self.completionHandler(serviceResponse)
     }
-    private func returnFialureResult(_ error: Error){
+    private func returnFailureResult(_ error: Error){
         let result =  Result<[MessageModel]>.failure(error)
         let serviceResponse = ServiceResponse(nil, result)
         self.completionHandler(serviceResponse)
