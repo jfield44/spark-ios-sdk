@@ -396,8 +396,12 @@ class MessageTests: XCTestCase {
                 return nil
             }
             let resultImg = UIImage(cgImage: cgImage)
+            let date : Date = Date()
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "MMMddyyyy:hhmmSSS"
+            let todaysDate = dateFormatter.string(from: date)
             var docURL = (FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)).last
-            docURL = docURL?.appendingPathComponent("sample1.png")
+            docURL = docURL?.appendingPathComponent(todaysDate + "-sample1.png")
             try UIImagePNGRepresentation(resultImg)?.write(to: docURL!)
             return docURL?.absoluteString
         }catch{
