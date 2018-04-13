@@ -135,6 +135,7 @@ public class Phone {
         case reject(Call, ServiceResponse<Any>, (Error?) -> Void)
         case alert(Call, ServiceResponse<Any>, (Error?) -> Void)
         case update(Call, ServiceResponse<CallModel>)
+        case updateMediaShare(Call, ServiceResponse<Any>, (Error?) -> Void)
     }
     
     init(authenticator: Authenticator) {
@@ -569,6 +570,16 @@ public class Phone {
                 return
             }
             if let url = call.model.myself?.url {
+                //TODO check if need stop screen share
+                if #available(iOS 11.2, *) {
+                    self.unshareScreen(call: call) {
+                        _ in
+                        SDKLogger.shared.error("Unshare screen by call end!")
+                    }
+                    call.mediaSession.stopLocalScreenShare()
+                }
+                
+                
                 self.client.leave(url, by: call.device, queue: self.queue.underlying) { res in
                     self.doLocusResponse(LocusResult.leave(call, res, completionHandler))
                     self.queue.yield()
@@ -609,6 +620,59 @@ public class Phone {
             }
         }
     }
+    
+    @available(iOS 11.2,*)
+    func shareScreen(call:Call, completionHandler: @escaping ((Error?) -> Void)) {
+        if !call.mediaSession.hasScreenShare {
+            let error = SparkError.illegalOperation(reason: "Call media option unsupport content share.")
+            completionHandler(error)
+            SDKLogger.shared.error("Failure", error: error)
+            return
+        }
+        
+        if call.isScreenSharedBySelfDevice() {
+            let error = SparkError.illegalStatus(reason: "Already shared by self.")
+            completionHandler(error)
+            SDKLogger.shared.error("Failure", error: error)
+            return
+        }
+        
+        if call.status != .connected {
+            let error = SparkError.illegalStatus(reason: "No active call.")
+            completionHandler(error)
+            SDKLogger.shared.error("Failure", error: error)
+            return
+        }
+        
+        let floor : MediaShareModel.MediaShareFloor = MediaShareModel.MediaShareFloor(beneficiary: call.model.myself, disposition: MediaShareModel.ShareFloorDisposition.granted, granted: nil, released: nil, requested: nil, requester: call.model.myself)
+        
+        let mediaShare : MediaShareModel = MediaShareModel(shareType: MediaShareModel.MediaShareType.screen, url:call.model.mediaShareUrl, shareFloor: floor)
+        self.updateMeidaShare(call: call, mediaShare: mediaShare, completionHandler: completionHandler)
+
+    }
+    
+    @available(iOS 11.2,*)
+    func unshareScreen(call:Call, completionHandler: @escaping ((Error?) -> Void)) {
+        if !call.mediaSession.hasScreenShare {
+            let error = SparkError.illegalOperation(reason: "Call media option unsupport content share.")
+            completionHandler(error)
+            SDKLogger.shared.error("Failure", error: error)
+            return
+        }
+        
+        if !call.isScreenSharedBySelfDevice() {
+            let error = SparkError.illegalStatus(reason: "Local share screen not start.")
+            completionHandler(error)
+            SDKLogger.shared.error("Failure", error: error)
+            return
+        }
+        
+        let floor : MediaShareModel.MediaShareFloor = MediaShareModel.MediaShareFloor(beneficiary: call.model.myself, disposition: MediaShareModel.ShareFloorDisposition.released, granted: nil, released: nil, requested: nil, requester: call.model.myself)
+        
+        let mediaShare : MediaShareModel = MediaShareModel(shareType: MediaShareModel.MediaShareType.screen, url:call.model.mediaShareUrl, shareFloor: floor)
+        self.updateMeidaShare(call: call, mediaShare: mediaShare, completionHandler: completionHandler)
+    }
+
     
     private func doLocusResponse(_ ret: LocusResult) {
         switch ret {
@@ -707,6 +771,19 @@ public class Phone {
                 call.update(model: model)
             case .failure(let error):
                 SDKLogger.shared.error("Failure update media ", error: error)
+            }
+        case .updateMediaShare( _, let res, let completionHandler):
+            switch res.result {
+            case .success(let json):
+                SDKLogger.shared.debug("Receive update media share locus response: \(json)")
+                DispatchQueue.main.async {
+                    completionHandler(nil)
+                }
+            case .failure(let error):
+                SDKLogger.shared.error("Failure update media share", error: error)
+                DispatchQueue.main.async {
+                    completionHandler(error)
+                }
             }
         }
         
@@ -812,9 +889,9 @@ public class Phone {
     }
     
     private func requestMediaAccess(option: MediaOption, completionHandler: @escaping () -> Void) {
-        AVCaptureDevice.requestAccess(forMediaType: AVMediaTypeAudio) { audioGranted in
+        AVCaptureDevice.requestAccess(for: AVMediaType.audio) { audioGranted in
             if option.hasVideo {
-                AVCaptureDevice.requestAccess(forMediaType: AVMediaTypeVideo) { videoGranted in
+                AVCaptureDevice.requestAccess(for: AVMediaType.video) { videoGranted in
                     DispatchQueue.main.async {
                         completionHandler()
                     }
@@ -828,4 +905,19 @@ public class Phone {
             
         }
     }
+    
+    func updateMeidaShare(call:Call, mediaShare: MediaShareModel,completionHandler: @escaping ((Error?) -> Void)) {
+        if let mediaShareUrl = mediaShare.url {
+            self.client.updateMediaShare(mediaShare, by: call.device, mediaShareUrl: mediaShareUrl, queue: self.queue.underlying) { res in
+                self.doLocusResponse(LocusResult.updateMediaShare(call, res,completionHandler))
+                self.queue.yield()
+            }
+        } else {
+            let error = SparkError.serviceFailed(code: -700, reason: "Unsupport media share.")
+            completionHandler(error)
+            SDKLogger.shared.error("Failure", error: error)
+        }
+        
+    }
+    
 }
