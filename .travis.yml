@@ -22,7 +22,7 @@ before_install:
 - brew outdated carthage || brew upgrade carthage
 - if brew outdated | grep -qx xctool; then brew upgrade xctool; fi
 - gem install xcpretty --no-rdoc --no-ri --no-document --quiet
-- cd ciscospark/SparkSDK && pod repo update && pod install
+- pod repo update
 script:
 - xctool clean build -workspace SparkSDK.xcworkspace -scheme SparkSDK -sdk iphonesimulator | xcpretty
 - xcodebuild test -workspace SparkSDK.xcworkspace -scheme SparkSDK -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 7 plus,OS=11.0' | xcpretty
