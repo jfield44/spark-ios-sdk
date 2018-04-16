@@ -119,14 +119,7 @@ class ListMessageOperation: Operation {
         listRequest.responseArray {(response: ServiceResponse<[MessageModel]>) in
             switch response.result{
             case .success(let list):
-                if list.count == 0{
-                    if self.resultList.count>0{
-                        self.decryptList()
-                    }
-                    self.returnSuccessResult()
-                }else{
-                    self.processResult(list)
-                }
+                self.processResult(list)
                 break
             case .failure(let error):
                 self.returnFailureResult(error)
@@ -136,19 +129,30 @@ class ListMessageOperation: Operation {
     }
     
     private func processResult(_ list: [MessageModel]){
+        if list.count == 0{
+            self.decryptList()
+            return
+        }
         let filterList = list.filter({$0.messageAction == MessageAction.post || $0.messageAction == MessageAction.share})
         self.remainCount -= filterList.count
         if self.remainCount > 0{
             self.resultList.append(contentsOf: filterList)
-            self.before = list.last?.created
-            self.listRequest()
+            if list.count < max{
+                self.decryptList()
+                return
+            }else{
+                self.before = list.last?.created
+                self.listRequest()
+            }
         }else if self.remainCount < 0{
             let remain = self.remainCount + filterList.count
             self.resultList.append(contentsOf: filterList.prefix(upTo: remain))
             self.decryptList()
+            return
         }else{
             self.resultList.append(contentsOf: filterList)
             self.decryptList()
+            return
         }
     }
     
