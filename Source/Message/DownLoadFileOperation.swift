@@ -304,7 +304,7 @@ class DownLoadFileOperation: Operation , URLSessionDataDelegate {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "MMMddyyyy:hhmmSSS"
         let todaysDate = dateFormatter.string(from: date)
-        return SparkFilePath + todaysDate + "-" + name
+        return SparkDownloadFilePath + todaysDate + "-" + name
     }
     
     private func downLoadError(){

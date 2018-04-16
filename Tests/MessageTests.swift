@@ -396,14 +396,15 @@ class MessageTests: XCTestCase {
                 return nil
             }
             let resultImg = UIImage(cgImage: cgImage)
+            let path = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.downloadsDirectory, FileManager.SearchPathDomainMask.userDomainMask, true).first! + "/SparkUpLoads/"
             let date : Date = Date()
             let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "MMMddyyyy:hhmmSSS"
+            dateFormatter.dateFormat = "MMMddyyyyhhmmSSS"
             let todaysDate = dateFormatter.string(from: date)
-            var docURL = (FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)).last
-            docURL = docURL?.appendingPathComponent(todaysDate + "-sample1.png")
-            try UIImagePNGRepresentation(resultImg)?.write(to: docURL!)
-            return docURL?.absoluteString
+            let name = "Image-" + todaysDate + ".jpg"
+            let destinationPath = path + name
+            try UIImageJPEGRepresentation(resultImg, 1.0)?.write(to: URL(fileURLWithPath: destinationPath))
+            return destinationPath
         }catch{
             return nil
         }

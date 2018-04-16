@@ -151,7 +151,6 @@
 		C79F140C1FBE7C3A00B43596 /* FakeReachabilityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C79F14041FBE7BE500B43596 /* FakeReachabilityService.swift */; };
 		C79F140D1FBE7C3A00B43596 /* FakeWebSocketService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C79F14051FBE7BE500B43596 /* FakeWebSocketService.swift */; };
 		C79F14101FC3B8C900B43596 /* CallTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C79F140E1FC3B88900B43596 /* CallTests.swift */; };
-		C79FBEC8207F2DCA00B53AF0 /* SparkBroadcastExtensionKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C7625FD2205CBB9600219F95 /* SparkBroadcastExtensionKit.framework */; };
 		C79FBEC9207F2E2500B53AF0 /* SparkSDKBroadcastUtil.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = C7394FD920720F2F00E1A190 /* SparkSDKBroadcastUtil.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -350,7 +349,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C79FBEC8207F2DCA00B53AF0 /* SparkBroadcastExtensionKit.framework in Frameworks */,
 				10EE01632045005600D1DD4A /* SparkSDKEncryptionKit.framework in Frameworks */,
 				1012559A2022C3E80072F5DC /* Wme.framework in Frameworks */,
 				3D15B7101D3E176C003BB682 /* SparkSDK.framework in Frameworks */,

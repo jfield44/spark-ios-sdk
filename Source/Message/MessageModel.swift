@@ -62,7 +62,7 @@ public enum FileType : String{
 /// The document path of a SparkSdk downloaded file.
 ///
 /// - since: 1.4.0
-public var SparkFilePath: String {
+public var SparkDownloadFilePath: String {
     get{
         do {
             let path = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true).first! + "/SparkDownLoads/"
@@ -80,11 +80,11 @@ public var SparkFilePath: String {
 public var SparkUploadFilePath: String {
     get{
         do {
-            let path = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true).first! + "/SparkUpLoads/"
+            let path = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.downloadsDirectory, FileManager.SearchPathDomainMask.userDomainMask, true).first! + "/SparkUpLoads/"
             try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: false, attributes: nil)
             return path
         } catch _ as NSError {
-            let path = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true).first! + "/SparkUpLoads/"
+            let path = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.downloadsDirectory, FileManager.SearchPathDomainMask.userDomainMask, true).first! + "/SparkUpLoads/"
             return path
         }
     }
@@ -274,7 +274,7 @@ public class FileObjectModel : Mappable{
                 dateFormatter.dateFormat = "MMMddyyyy:hhmmSSS"
                 let todaysDate = dateFormatter.string(from: date)
                 let name = "Image-" + todaysDate + ".jpg"
-                let destinationPath = SparkFilePath + "/" + name
+                let destinationPath = SparkUploadFilePath + name
                 try data.write(to: URL(fileURLWithPath: destinationPath))
                 self.localFileUrl = destinationPath
                 let thumbFile = ThumbNailImageModel(localFileUrl: destinationPath,width: Int(image.size.width), height : Int(image.size.height))
