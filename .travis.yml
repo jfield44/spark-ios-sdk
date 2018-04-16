@@ -22,11 +22,13 @@ before_install:
 - brew outdated carthage || brew upgrade carthage
 - if brew outdated | grep -qx xctool; then brew upgrade xctool; fi
 - gem install xcpretty --no-rdoc --no-ri --no-document --quiet
-- pod repo update
+#- pod repo update
+- pod repo update > /dev/null
+- brew install sendemail
 script:
 - xctool clean build -workspace SparkSDK.xcworkspace -scheme SparkSDK -sdk iphonesimulator | xcpretty
-- xcodebuild test -workspace SparkSDK.xcworkspace -scheme SparkSDK -sdk iphonesimulator -destination "$DESTINATION" test | xcpretty
+- travis_retry xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -destination "$DESTINATION" -configuration "$CONFIGURATION" CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO clientSecret="$CLIENTSECRET" test | xcpretty -c
+- travis_wait 50 bash IntegrationTesting.sh
+#- xcodebuild test -workspace SparkSDK.xcworkspace -scheme SparkSDK -sdk iphonesimulator -destination "$DESTINATION" test | xcpretty
 
-#  - travis_retry xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -destination "$DESTINATION" -configuration "$CONFIGURATION" CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO clientSecret="$CLIENTSECRET" test | xcpretty -c
-#  - travis_wait 50 bash IntegrationTesting.sh
 branches:

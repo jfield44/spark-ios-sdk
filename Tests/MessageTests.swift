@@ -231,6 +231,7 @@ class MessageTests: XCTestCase {
     
     func testListingMessagesBeforeADateAndAMessageIdDoesReturnMessageWithThatId() {
         let message = postMessage(conversationId: roomId, text: text, mentions:nil, files: nil)
+        Thread.sleep(forTimeInterval: 5)
         let now = Date()
         let messageArray = listMessages(conversationId: roomId, mentionedPeople: nil, before: now, beforeMessage: nil, max: nil)
         XCTAssertEqual(messageArray?.contains() {$0.id == message?.id}, true)
