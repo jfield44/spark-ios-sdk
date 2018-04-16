@@ -26,8 +26,10 @@ before_install:
 - brew install sendemail
 script:
 - xctool clean build -workspace SparkSDK.xcworkspace -scheme SparkSDK -sdk iphonesimulator | xcpretty
-- xcodebuild test -workspace "$WORKSPACE" -scheme "$SCHEME" -sdk iphonesimulator -destination "$DESTINATION" -configuration "$CONFIGURATION" CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO clientSecret="$CLIENTSECRET" test | xcpretty
+- xcodebuild test -workspace SparkSDK.xcworkspace -scheme SparkSDK -sdk iphonesimulator -destination "$DESTINATION" test | xcpretty
+
 #- travis_retry xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -destination "$DESTINATION" -configuration "$CONFIGURATION" CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO clientSecret="$CLIENTSECRET" test | xcpretty -c
-- travis_wait 50 bash IntegrationTesting.sh
+#- travis_wait 50 bash IntegrationTesting.sh
+#- xcodebuild test -workspace SparkSDK.xcworkspace -scheme SparkSDK -sdk iphonesimulator -destination "$DESTINATION" test | xcpretty
 
 branches:
