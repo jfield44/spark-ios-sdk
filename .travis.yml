@@ -9,11 +9,11 @@ env:
   - WORKSPACE=SparkSDK.xcworkspace
   - SCHEME=SparkSDK
   matrix:
-    - DESTINATION="name=iPhone 6,OS=10.0"      CONFIGURATION="ReleaseTest" IsIntegrationTestingTask="true"
-    - DESTINATION="name=iPhone 6s plus,OS=10.1"  CONFIGURATION="ReleaseTest"
-    - DESTINATION="name=iPhone 7,OS=10.2"      CONFIGURATION="ReleaseTest"
-    - DESTINATION="name=iPhone 7,OS=10.3.1" CONFIGURATION="ReleaseTest"
-    - DESTINATION="name=iPhone 7 plus,OS=11.0"      CONFIGURATION="ReleaseTest"
+    - DESTINATION="platform=iOS Simulator,name=iPhone 6,OS=10.0"      CONFIGURATION="ReleaseTest" IsIntegrationTestingTask="true"
+    - DESTINATION="platform=iOS Simulator,name=iPhone 6s plus,OS=10.1"  CONFIGURATION="ReleaseTest"
+    - DESTINATION="platform=iOS Simulator,name=iPhone 7,OS=10.2"      CONFIGURATION="ReleaseTest"
+    - DESTINATION="platform=iOS Simulator,name=iPhone 7,OS=10.3.1" CONFIGURATION="ReleaseTest"
+    - DESTINATION="platform=iOS Simulator,name=iPhone 7 plus,OS=11.0"      CONFIGURATION="ReleaseTest"
 before_install:
 #  - gem install cocoapods --pre
 #  - pod repo update > /dev/null
@@ -25,7 +25,7 @@ before_install:
 - pod repo update
 script:
 - xctool clean build -workspace SparkSDK.xcworkspace -scheme SparkSDK -sdk iphonesimulator | xcpretty
-- xcodebuild test -workspace SparkSDK.xcworkspace -scheme SparkSDK -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 7 plus,OS=11.0' test | xcpretty
+- xcodebuild test -workspace SparkSDK.xcworkspace -scheme SparkSDK -sdk iphonesimulator -destination "$DESTINATION" test | xcpretty
 
 #  - travis_retry xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -destination "$DESTINATION" -configuration "$CONFIGURATION" CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO clientSecret="$CLIENTSECRET" test | xcpretty -c
 #  - travis_wait 50 bash IntegrationTesting.sh
