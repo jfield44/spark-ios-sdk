@@ -120,6 +120,9 @@ class ListMessageOperation: Operation {
             switch response.result{
             case .success(let list):
                 if list.count == 0{
+                    if self.resultList.count>0{
+                        self.decryptList()
+                    }
                     self.returnSuccessResult()
                 }else{
                     self.processResult(list)
