@@ -5,10 +5,11 @@ Pod::Spec.new do |s|
   s.homepage = "https://developer.ciscospark.com"
   s.license = "MIT"
   s.author = { "Spark SDK team" => "spark-sdk-crdc@cisco.com" }
-  s.source = { :git => "https://github.com/ciscospark/spark-ios-sdk.git", :tag => s.version }
+  s.source = { :git => "https://github.com/jfield44/spark-ios-sdk.git", :tag => s.version }
   s.source_files = "Source/**/*.{h,m,swift}"
   s.requires_arc = true
   s.ios.deployment_target = "9.0"
+  s.tvos.deployment_target = '9.0'
   s.preserve_paths = 'MediaEngine/Wme.framework'
   s.xcconfig = { 'FRAMEWORK_SEARCH_PATHS' => '$(PODS_ROOT)/SparkSDK/MediaEngine', 'ENABLE_BITCODE' => 'NO'}
   s.vendored_frameworks = "MediaEngine/Wme.framework"
